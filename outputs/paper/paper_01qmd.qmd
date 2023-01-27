@@ -25,33 +25,128 @@ library(janitor)
 
 
 ```{r}
+#| warning: false
+#| echo: false
 
-data_url <- "https://open.toronto.ca/dataset/bike-share-toronto-ridership-data/"
+data_url <- "https://open.toronto.ca/dataset/ttc-subway-delay-data/"
 
-# lists all the reosources available using the link
-packages_data <- data_url %>%
+packages_data <- data_url |> 
   list_package_resources()
-packages_data
 
-data_2015 <- filter(packages_data, id == "85326868-508c-497e-b139-b698aaf27bbf")
+delay_data_2022 <- filter(packages_data, name == "ttc-subway-delay-data-2022")
 
-data_2015 <- data_2015 |> 
+not_cleaned <- delay_data_2022 |> 
   get_resource()
 
-data_2015 <- data_2015[["Demographics"]]
+ttc_data <- not_cleaned |>  
+  clean_names() |> 
+  mutate(
+    line =
+      recode(
+        line,
+        "BD" = "Line 02 Green",
+        "SHP" = "Line 04 Sheppard",
+        "SRT" = "Line 03 Scarborough",
+        "YU" = "Line 01 Yellow",
+      )
+  )
 
-data_2015
+ttc_df_filtered <- filter(ttc_data, ttc_data$min_delay > 0)
+  
+# not working - restarted, then worked
+ttc_df_mean <- ttc_df_filtered %>% 
+  group_by(line) |> 
+  summarize(min_delay = mean(min_delay))
 
+df_filtered_01 <- filter(ttc_df_mean, line != "", line != "YU/BD") |> 
+  mutate(across(min_delay, round, 2)) # round off
+
+
+ttc_df_arranged <- arrange(df_filtered_01, line)
 
 ```
 
+
 # Introduction
 
+### be clear about your objective/aim/estimand
 You can and should cross-reference sections and sub-sections. For instance, Section \@ref(data). Quarto automatically makes the sections lower case and adds a dash to spaces to generate labels, for instance, Section \@ref(first-discussion-point). 
 
 
 
 # Data
+
+```{r}
+#| warning: false
+#| echo: false
+#| label: fig-line-delays
+#| fig-cap: Subway delay average - TTC trains with delay time.
+#| fig-align: center
+#| fig-width: 5.5
+ 
+bar_graph_01 <- ggplot(data = ttc_df_arranged, aes (x = line, y = min_delay, fill = line)) +
+  geom_bar(stat = "identity", alpha = 0.9, width=0.5) +
+  scale_fill_manual(values = c("Line 01 Yellow" = "#fedd0b",
+                              "Line 02 Green" = "#439523",
+                              "Line 03 Scarborough" = "#00a8e0",
+                              "Line 04 Sheppard" = "#830b53")) +
+  geom_text(aes(label = min_delay), vjust=-0.3, size=4) +
+  ylim(0, 15) +
+  xlab("Trains") +
+  ylab("Delay time (minutes)") +
+  theme(rect = element_blank(),
+        legend.position = "none",
+        axis.line = element_line(colour = "#5a6472", 
+                      size = 0.5, linetype = "solid")
+        )
+
+# calls the stored graph to show on screen
+bar_graph_01
+
+
+```
+
+
+```{r}
+
+ttc_data_days <- ttc_data |> 
+  group_by(day) |> 
+  summarize(min_delay = mean(min_delay)) |> 
+  mutate(across(min_delay, round, 2))
+
+```
+
+
+```{r}
+#| warning: false
+#| echo: false
+#| label: fig-line-delays
+#| fig-cap: Subway delay average - TTC trains with delay time.
+#| fig-align: center
+#| fig-width: 5.5
+
+bar_graph_02 <- ggplot(ttc_data_days, aes(x=factor(day, level=c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")), y = min_delay)) +
+  geom_bar(stat = "identity") +
+  geom_col(aes(fill = min_delay)) + 
+  scale_fill_gradient2(low = "white",
+                       midpoint = mean((ttc_data_days$min_delay)*0.75),
+                       high = "#FF6666") +
+  geom_text(aes(label = min_delay), vjust=-0.3, size=4) +
+  ylim(0, 5) +
+  xlab("Days") +
+  ylab("Delay time (minutes)") +
+  theme(rect = element_blank(),
+        legend.position = "none",
+        axis.line = element_line(colour = "#5a6472", 
+                      size = 0.5, linetype = "solid")
+        )
+
+# calls the stored graph to show on screen
+bar_graph_02
+
+```
+
+
 
 Our data is of penguins (@fig-bills).
 
