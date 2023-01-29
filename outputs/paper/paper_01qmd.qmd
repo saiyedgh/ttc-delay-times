@@ -38,16 +38,21 @@ delay_data_2022 <- filter(packages_data, name == "ttc-subway-delay-data-2022")
 not_cleaned <- delay_data_2022 |> 
   get_resource()
 
+l1 <- "Line 01 Yellow"
+l2 <- "Line 02 Green"
+l3 <- "Line 03 Scarborough"
+l4 <- "Line 04 Sheppard"
+
 ttc_data <- not_cleaned |>  
   clean_names() |> 
   mutate(
     line =
       recode(
         line,
-        "BD" = "Line 02 Green",
-        "SHP" = "Line 04 Sheppard",
-        "SRT" = "Line 03 Scarborough",
-        "YU" = "Line 01 Yellow",
+        "BD" = l2,
+        "SHP" = l4,
+        "SRT" = l3,
+        "YU" = l1,
       )
   )
 
@@ -80,7 +85,7 @@ You can and should cross-reference sections and sub-sections. For instance, Sect
 #| warning: false
 #| echo: false
 #| label: fig-line-delays
-#| fig-cap: Subway delay average - TTC trains with delay time.
+#| fig-cap: TTC subways, average delay times.
 #| fig-align: center
 #| fig-width: 5.5
  
@@ -106,6 +111,68 @@ bar_graph_01
 
 ```
 
+# cite this get mode chunk 
+```{r}
+#| warning: false
+#| echo: false
+
+getmode <- function(v) {
+ uniqv <- unique(v)
+ uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+# https://www.tutorialspoint.com/r/r_mean_median_mode.htm
+
+delay_01 <- filter(ttc_df_filtered, ttc_df_filtered$line == l1)
+delay_02 <- filter(ttc_df_filtered, ttc_df_filtered$line == l2)
+delay_03 <- filter(ttc_df_filtered, ttc_df_filtered$line == l3)
+delay_04 <- filter(ttc_df_filtered, ttc_df_filtered$line == l4)
+
+mode_01 <- getmode(delay_01$min_delay)
+mode_02 <- getmode(delay_02$min_delay) 
+mode_03 <- getmode(delay_03$min_delay) 
+mode_04 <- getmode(delay_04$min_delay)
+
+line_names <- c(l1, l2, l3, l4)
+line_delay_modes <- c(mode_01, mode_02, mode_03, mode_04)
+
+mode_frame <- tibble(
+  line = line_names,
+  min_delay = line_delay_modes
+)
+
+mode_frame$line |> 
+  class()
+
+```
+
+
+```{r}
+#| warning: false
+#| echo: false
+#| label: fig-delays-mode
+#| fig-cap: Most common delay duration in minutes.
+#| fig-align: center
+#| fig-width: 5.5
+
+bar_graph_02 <- ggplot(data = mode_frame, aes(x = line, y = min_delay, fill = min_delay)) +
+  geom_bar(stat = "identity", alpha = 0.9, width = 0.5) +
+  geom_text(aes(label = min_delay), vjust=-0.3, size=4) +
+  xlab("Trains") +
+  ylab("Delay time (minutes)") +
+  scale_fill_gradient2(low = "white",
+                     midpoint = 0,
+                     high = "#c8442d") +
+  theme(rect = element_blank(),
+        legend.position = "none",
+        axis.line = element_line(colour = "#5a6472", 
+                      size = 0.5, linetype = "solid")
+        )
+
+# calls the stored graph to show on screen
+bar_graph_02
+```
+
+
 
 ```{r}
 
@@ -114,18 +181,21 @@ ttc_data_days <- ttc_data |>
   summarize(min_delay = mean(min_delay)) |> 
   mutate(across(min_delay, round, 2))
 
+ttc_df_mean <- ttc_df_filtered %>% 
+  group_by(line) |> 
+  summarize(min_delay = mean(min_delay))
 ```
 
 
 ```{r}
 #| warning: false
 #| echo: false
-#| label: fig-line-delays
-#| fig-cap: Subway delay average - TTC trains with delay time.
+#| label: fig-delays-days
+#| fig-cap: Subway delay average over days of the week.
 #| fig-align: center
 #| fig-width: 5.5
 
-bar_graph_02 <- ggplot(ttc_data_days, aes(x=factor(day, level=c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")), y = min_delay)) +
+bar_graph_03 <- ggplot(ttc_data_days, aes(x=factor(day, level=c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")), y = min_delay)) +
   geom_bar(stat = "identity") +
   geom_col(aes(fill = min_delay)) + 
   scale_fill_gradient2(low = "white",
@@ -142,8 +212,29 @@ bar_graph_02 <- ggplot(ttc_data_days, aes(x=factor(day, level=c("Sunday", "Monda
         )
 
 # calls the stored graph to show on screen
-bar_graph_02
+bar_graph_03
 
+```
+
+
+```{r}
+# #| warning: false
+# #| echo: false
+# #| label: fig-line-delays-days
+# #| fig-cap: Subway delays over the period of 24 hours.
+# #| fig-align: center
+# #| fig-width: 5.5
+
+#ttc_df_time <- ttc_df_filtered |> 
+#  group_by(time) |> 
+#  summarize(min_delay = mean(min_delay))
+
+#ttc_df_time$time |> class()
+
+#ttc_df_arranged_time <- arrange(ttc_df_time, time)
+
+#ggplot(ttc_df_arranged_time, aes(x = min_delay, y = time)) +
+#  geom_point()
 ```
 
 
