@@ -121,12 +121,12 @@ Furthermore, the delay codes can be decoded to evaluate the causes using the pub
 # creating histogram using ggplot and using scales to draw a logarithmic chart that will show all data points more effectively
 histogram_01 <- ggplot(ttc_data, aes(x=min_delay)) +
   geom_histogram(color = "black", fill = "#c8442d") +
-  scale_x_log10(breaks = breaks_log(n = 12),
+  scale_x_log10(breaks = breaks_log(n = 12), # number of page breaks witht the log scale
               labels = label_comma()) +
    scale_y_log10(breaks = breaks_log(n = 10),
               labels = label_comma()) +
      theme_bw() +
-  annotation_logticks() +
+  annotation_logticks() + # for scale marks
   xlab("Minutes") +
   ylab("Number of Delays")
 
@@ -240,7 +240,7 @@ bar_graph_01 <- ggplot(data = ttc_df_arranged, aes (x = line, y = min_delay, fil
   ylab("Delay time (minutes)") + # labels the Y axis
   theme(rect = element_blank(),
         legend.position = "none",
-        axis.line = element_line(colour = "#5a6472", 
+        axis.line = element_line(colour = "#5a6472", # border for the figure
                       size = 0.5, linetype = "solid")
         )
 
@@ -255,6 +255,8 @@ For this reason, let's move on towards visualizing the mode, or the most common 
 ```{r}
 #| echo: false
 #| warning: false
+
+# mode calculation for figure 3
 
 getmode <- function(v) {
  uniqv <- unique(v)
@@ -291,13 +293,14 @@ mode_frame <- tibble(
 #| fig-height: 2.1
 #| fig-width: 5.15
 
+# Figure 3
 bar_graph_02 <- ggplot(data = mode_frame, aes(x = line, y = min_delay, fill = min_delay)) +
   geom_bar(stat = "identity", alpha = 0.9, width = 0.5) +
   geom_text(aes(label = min_delay), vjust = -0.3, size = 3) +
   ylim(0, 6) +
   xlab("Trains") +
   ylab("Avg delay time (minutes)") +
-  scale_fill_gradient2(low = "white",
+  scale_fill_gradient2(low = "white", # the gradient uses a range of colors
                      midpoint = 0,
                      high = "#c8442d") +
   theme(rect = element_blank(),
@@ -315,6 +318,7 @@ The above chart \[Figure 3\] demonstrates that the most common delay is three mi
 #| echo: false
 #| warning: false
 
+# calculating averages for the weekly average chart, Figure 4
 ttc_data_days <- ttc_data |> 
   group_by(day) |> 
   summarize(min_delay = mean(min_delay)) |> 
@@ -335,6 +339,7 @@ Lastly, let's analyze the delays per day of the week, which will help us visuali
 #| fig-height: 2.1
 #| fig-width: 5.15
 
+# Figure 4
 bar_graph_03 <- ggplot(ttc_data_days, aes(x=factor(day, level=c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")), y = min_delay)) +
   geom_bar(stat = "identity", alpha = 0.9, width = 0.25) +
   geom_col(aes(fill = min_delay)) + 
